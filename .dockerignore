@@ -1,0 +1,6 @@
+backend/.venv
+backend/var
+frontend/node_modules
+frontend/dist
+frontend/e2e/shots
+**/__pycache__

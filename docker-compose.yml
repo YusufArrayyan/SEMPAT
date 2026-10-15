@@ -1,0 +1,35 @@
+# Jalankan seluruh sistem: docker compose up --build
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: sempat
+      POSTGRES_USER: sempat
+      POSTGRES_PASSWORD: ${SEMPAT_DB_PASSWORD:-ganti-kata-sandi-ini}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sempat"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://sempat:${SEMPAT_DB_PASSWORD:-ganti-kata-sandi-ini}@db:5432/sempat
+      SEMPAT_COOKIE_SECURE: ${SEMPAT_COOKIE_SECURE:-0}
+      SEMPAT_CORS_ORIGINS: ""
+      SEMPAT_ADMIN_PASSWORD: ${SEMPAT_ADMIN_PASSWORD:-sempat-admin-2026}
+      SEMPAT_ANALIS_PASSWORD: ${SEMPAT_ANALIS_PASSWORD:-sempat-analis-2026}
+      SEMPAT_PENELITI_PASSWORD: ${SEMPAT_PENELITI_PASSWORD:-sempat-peneliti-2026}
+    volumes:
+      - appdata:/data
+    ports:
+      - "8000:8000"
+
+volumes:
+  dbdata:
+  appdata:
