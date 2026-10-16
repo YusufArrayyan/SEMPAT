@@ -218,7 +218,7 @@ def _shelter_row(p: Parsed, i: int, props: dict, lon, lat):
     if cap is not None and cap < 0:
         p.rejected.append({"row": i, "reason": "Kapasitas negatif."})
         return
-    p.rows.append({"name": name, "lon": float(lon), "lat": float(lat), "type": tipe, "capacity": int(cap) if cap else None, "status": status or "aktif"})
+    p.rows.append({"name": name[:200], "lon": float(lon), "lat": float(lat), "type": tipe, "capacity": int(cap) if cap else None, "status": (status or "aktif")[:20]})
 
 
 def parse_roads(data: bytes, filename: str) -> Parsed:
@@ -247,8 +247,8 @@ def parse_roads(data: bytes, filename: str) -> Parsed:
                 {
                     "id": sid[:40],
                     "coords": coords,
-                    "road_class": str(_first(props, "kelas", "class", "highway", "fclass", default="")),
-                    "name": str(_first(props, "nama", "name", default="")),
+                    "road_class": str(_first(props, "kelas", "class", "highway", "fclass", default=""))[:40],
+                    "name": str(_first(props, "nama", "name", default=""))[:200],
                 }
             )
     return p
@@ -277,7 +277,10 @@ def parse_areas(data: bytes, filename: str) -> Parsed:
         if level == "kelurahan" and not parent:
             p.rejected.append({"row": i, "reason": "Kelurahan tanpa kode_induk (kode kecamatan)."})
             continue
-        p.rows.append({"code": code, "name": name, "level": level, "parent_code": parent, "geom": mapping(g)})
+        if len(code) > 20 or (parent and len(parent) > 20):
+            p.rejected.append({"row": i, "reason": "Kode wilayah lebih dari 20 karakter."})
+            continue
+        p.rows.append({"code": code, "name": name[:120], "level": level, "parent_code": parent, "geom": mapping(g)})
     return p
 
 
@@ -296,7 +299,7 @@ def parse_population(data: bytes, filename: str) -> Parsed:
         if pop is None:
             p.rejected.append({"row": i, "reason": "Kolom penduduk kosong atau bukan angka."})
             continue
-        p.rows.append({"code": str(code), "population": pop, "year": int(year) if year else None})
+        p.rows.append({"code": str(code)[:20], "population": pop, "year": int(year) if year else None})
     return p
 
 
@@ -310,7 +313,7 @@ def parse_zones(data: bytes, filename: str) -> Parsed:
         if g is None:
             continue
         props = {str(k).lower(): v for k, v in (f.get("properties") or {}).items()}
-        p.rows.append({"geom": mapping(g), "source": str(_first(props, "sumber", "source", default=""))})
+        p.rows.append({"geom": mapping(g), "source": str(_first(props, "sumber", "source", default=""))[:200]})
     return p
 
 
@@ -324,7 +327,7 @@ def parse_sirens(data: bytes, filename: str) -> Parsed:
             if lon is None or lat is None:
                 p.rejected.append({"row": i, "reason": "Koordinat kosong."})
                 continue
-            p.rows.append({"name": str(_first(props, "nama", "name", default="")), "lon": lon, "lat": lat, "status": str(_first(props, "status", default="aktif"))})
+            p.rows.append({"name": str(_first(props, "nama", "name", default=""))[:200], "lon": lon, "lat": lat, "status": str(_first(props, "status", default="aktif"))[:20]})
         return p
     feats, crs = _load_features(data, filename)
     p.crs = crs
@@ -334,7 +337,7 @@ def parse_sirens(data: bytes, filename: str) -> Parsed:
         if g is None:
             continue
         props = {str(k).lower(): v for k, v in (f.get("properties") or {}).items()}
-        p.rows.append({"name": str(_first(props, "nama", "name", default="")), "lon": g.x, "lat": g.y, "status": str(_first(props, "status", default="aktif"))})
+        p.rows.append({"name": str(_first(props, "nama", "name", default=""))[:200], "lon": g.x, "lat": g.y, "status": str(_first(props, "status", default="aktif"))[:20]})
     return p
 
 

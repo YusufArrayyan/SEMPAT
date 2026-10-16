@@ -20,6 +20,16 @@ docker compose up --build
 
 Buka http://localhost:8000. Basis data PostgreSQL 16 + PostGIS; data contoh dimuat otomatis pada awal pertama.
 
+### Render (Blueprint)
+
+`render.yaml` membuat satu web service (Docker) dan satu PostgreSQL di region Singapura.
+
+1. Dashboard Render → **New** → **Blueprint** → pilih repo ini.
+2. Isi kata sandi `SEMPAT_ADMIN_PASSWORD`, `SEMPAT_ANALIS_PASSWORD`, `SEMPAT_PENELITI_PASSWORD` saat diminta. Bila dibiarkan kosong, kata sandi acak dibuat dan dicatat sekali di log layanan.
+3. Klik **Apply**. Build pertama ±5–10 menit; data contoh dimuat otomatis.
+
+Catatan paket gratis: layanan tidur setelah 15 menit tanpa akses (bangun ±1 menit), berkas laporan di disk hilang saat layanan dimulai ulang (cukup unduh ulang), dan PostgreSQL gratis Render kedaluwarsa setelah 30 hari. Untuk pilot sungguhan, naikkan ke paket berbayar.
+
 ### Pengembangan lokal
 
 Backend (Python 3.12+):
@@ -88,4 +98,4 @@ frontend/src/pages/   layar S1–S12 PRD (Masuk, Dasbor, Data, Skenario, Editor,
 
 - Hanya sel permukiman di dalam zona genangan yang dihitung; IK memakai penduduk terdampak sebagai penyebut.
 - Peta tidak memakai ubin dasar eksternal; latar laut, batas wilayah, dan jalan digambar dari data sendiri agar berjalan luring.
-- Jalur Docker/PostgreSQL ditulis dan divalidasi konfigurasinya, tetapi pengujian otomatis dijalankan pada SQLite.
+- Jalur Docker/PostgreSQL ditulis dan divalidasi konfigurasinya, tetapi pengujian otomatis dijalankan pada SQLite; deploy pertama di Render adalah uji PostgreSQL pertamanya.

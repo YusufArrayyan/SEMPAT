@@ -1,0 +1,39 @@
+# Blueprint Render: https://render.com/docs/blueprint-spec
+# Buat lewat Dashboard Render -> New -> Blueprint -> pilih repo ini.
+databases:
+  - name: sempat-db
+    databaseName: sempat
+    user: sempat
+    plan: free
+    region: singapore
+
+services:
+  - type: web
+    name: sempat
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sempat-db
+          property: connectionString
+      - key: SEMPAT_COOKIE_SECURE
+        value: "1"
+      - key: SEMPAT_CORS_ORIGINS
+        value: ""
+      - key: SEMPAT_WORKERS
+        value: "1"
+      - key: SEMPAT_DATA_DIR
+        value: /data
+      # Kata sandi akun awal: Render meminta Anda mengisinya saat Blueprint dibuat.
+      # Hanya dipakai sekali, ketika basis data masih kosong.
+      - key: SEMPAT_ADMIN_PASSWORD
+        sync: false
+      - key: SEMPAT_ANALIS_PASSWORD
+        sync: false
+      - key: SEMPAT_PENELITI_PASSWORD
+        sync: false

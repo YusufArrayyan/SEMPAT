@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 
 from sqlalchemy import select, text
 
@@ -17,10 +18,20 @@ from .security import audit, hash_password
 log = logging.getLogger("sempat.bootstrap")
 
 # Akun awal pengembangan lokal. Ganti lewat variabel lingkungan untuk penyebaran.
+def _seed_password(env: str, dev_default: str) -> tuple[str, bool]:
+    """Nilai env bila diisi; bawaan pengembangan bila env tidak ada; acak bila env ada tetapi kosong."""
+    v = os.getenv(env)
+    if v is None:
+        return dev_default, False
+    if v.strip():
+        return v, False
+    return secrets.token_urlsafe(12), True
+
+
 SEED_USERS = [
-    ("admin@sempat.local", "Admin Sempat", "admin", os.getenv("SEMPAT_ADMIN_PASSWORD", "sempat-admin-2026")),
-    ("analis@sempat.local", "Analis BPBD", "analis", os.getenv("SEMPAT_ANALIS_PASSWORD", "sempat-analis-2026")),
-    ("peneliti@sempat.local", "Peneliti Bappeda", "peneliti", os.getenv("SEMPAT_PENELITI_PASSWORD", "sempat-peneliti-2026")),
+    ("admin@sempat.local", "Admin Sempat", "admin", "SEMPAT_ADMIN_PASSWORD", "sempat-admin-2026"),
+    ("analis@sempat.local", "Analis BPBD", "analis", "SEMPAT_ANALIS_PASSWORD", "sempat-analis-2026"),
+    ("peneliti@sempat.local", "Peneliti Bappeda", "peneliti", "SEMPAT_PENELITI_PASSWORD", "sempat-peneliti-2026"),
 ]
 
 SAMPLE_FILES = [
@@ -51,12 +62,31 @@ def init_db() -> None:
             c.execute(text("CREATE TRIGGER audit_append_only BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_append_only();"))
 
 
+def recover_interrupted_runs() -> None:
+    """Run yang tertinggal saat server mati (mis. instans tidur) ditandai gagal agar dapat diulang."""
+    from .models import Run
+
+    db = SessionLocal()
+    try:
+        for r in db.scalars(select(Run).where(Run.status.in_(["antrean", "berjalan"]))):
+            r.status = "gagal"
+            r.stage = "Gagal"
+            r.finished_at = now()
+            r.error = {"message": "Perhitungan terhenti karena server dimulai ulang.", "hint": "Jalankan ulang skenario ini."}
+        db.commit()
+    finally:
+        db.close()
+
+
 def seed(with_sample: bool = True) -> None:
     db = SessionLocal()
     try:
         if not db.scalar(select(User)):
-            for email, name, role, pw in SEED_USERS:
+            for email, name, role, env, dev_default in SEED_USERS:
+                pw, generated = _seed_password(env, dev_default)
                 db.add(User(email=email, name=name, role=role, password_hash=hash_password(pw)))
+                if generated:
+                    log.warning("%s kosong; kata sandi acak untuk %s: %s (ganti setelah masuk)", env, email, pw)
             db.commit()
             log.info("akun awal dibuat")
         if with_sample and not db.scalar(select(Dataset)):

@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .api import router
-from .bootstrap import init_db, seed
+from .bootstrap import init_db, recover_interrupted_runs, seed
 from .config import CORS_ORIGINS
 from .security import api_limiter
 
@@ -43,6 +43,7 @@ log = logging.getLogger("sempat.http")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    recover_interrupted_runs()
     seed()
     yield
 

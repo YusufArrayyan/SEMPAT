@@ -13,8 +13,9 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=web /web/dist /srv/frontend/dist
-RUN useradd -r -u 10001 sempat && mkdir -p /data && chown sempat /data
+RUN useradd -r -u 10001 sempat && mkdir -p /data && chown -R sempat /data /srv/backend
 USER sempat
 ENV SEMPAT_DATA_DIR=/data
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+# Render menyetel PORT; bawaan 8000 untuk Docker Compose.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]

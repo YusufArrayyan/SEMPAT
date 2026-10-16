@@ -198,9 +198,9 @@ def _last_run(db: Session, scenario_id: str) -> Run | None:
 class DatasetIn(BaseModel):
     name: str = Field(min_length=3, max_length=200)
     source: str = ""
-    license: str = ""
+    license: str = Field("", max_length=120)
     license_open: bool = False
-    accessed_at: str = ""
+    accessed_at: str = Field("", max_length=20)
     notes: str = ""
 
 
