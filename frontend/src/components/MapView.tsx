@@ -22,6 +22,8 @@ export interface MapViewProps {
   roads?: FC | null
   cells?: FC | null
   route?: GeoJSON.Feature | null
+  /** Bila diisi, peta bergeser agar rute/sel terpilih tampak penuh. */
+  focusRoute?: boolean
   selectedCell?: number | null
   hypothetical?: { lon: number; lat: number; name: string }[]
   blocked?: string[]
@@ -42,13 +44,17 @@ const STYLE: StyleSpecification = {
 }
 
 /** Pola isi agar kelas terbaca tanpa warna (NFR-07). */
-function patternImage(cls: Cls): { width: number; height: number; data: Uint8Array } {
+function patternImage(cls: Cls | 'disembunyikan'): { width: number; height: number; data: Uint8Array } {
   const s = 16
   const c = document.createElement('canvas')
   c.width = c.height = s
   const g = c.getContext('2d')!
-  g.fillStyle = CLS_COLOR[cls]
+  g.fillStyle = cls === 'disembunyikan' ? '#e8e8e8' : CLS_COLOR[cls]
   g.fillRect(0, 0, s, s)
+  if (cls === 'disembunyikan') {
+    g.fillStyle = '#a8a8a8'
+    g.fillRect(0, 7, s, 2)
+  }
   if (cls === 'rawan') {
     g.strokeStyle = 'rgba(22,22,22,0.55)'
     g.lineWidth = 2
@@ -162,7 +168,7 @@ export default function MapView(props: MapViewProps) {
     map.current = m
 
     m.on('load', () => {
-      for (const c of ['cukup', 'rawan', 'terlambat', 'terputus'] as Cls[]) m.addImage(`pat-${c}`, patternImage(c), { pixelRatio: 2 })
+      for (const c of ['cukup', 'rawan', 'terlambat', 'terputus', 'disembunyikan'] as const) m.addImage(`pat-${c}`, patternImage(c), { pixelRatio: 2 })
       for (const k of ['vertikal', 'dataran_tinggi', 'tak_diketahui', 'hipotetis', 'ditolak'] as const) m.addImage(`ic-${k}`, iconImage(k), { pixelRatio: 2 })
       for (const id of ['kecamatan', 'kelurahan', 'zones', 'roads', 'cells', 'route', 'shelters', 'sirens', 'hypo']) m.addSource(id, { type: 'geojson', data: EMPTY, ...(id === 'cells' || id === 'roads' ? { promoteId: 'id' } : {}) })
 
@@ -198,6 +204,8 @@ export default function MapView(props: MapViewProps) {
         },
       })
       m.addLayer({ id: 'tes-hipotetis', type: 'symbol', source: 'hypo', layout: { 'icon-image': 'ic-hipotetis', 'icon-size': ['interpolate', ['linear'], ['zoom'], 11, 0.7, 15, 1.1], 'icon-allow-overlap': true } })
+      // Atribusi dimulai terlipat agar tidak menutupi peta di layar sempit.
+      el.current?.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
       setReady(true)
     })
 
@@ -256,7 +264,8 @@ export default function MapView(props: MapViewProps) {
     set('zones', props.layers.zones)
     set('shelters', props.layers.shelters)
     set('sirens', props.layers.sirens)
-    if (!fitted.current && props.layers.bounds && !props.view) {
+    const focusing = props.focusRoute && (props.route?.geometry as GeoJSON.LineString | undefined)?.coordinates?.length
+    if (!fitted.current && props.layers.bounds && !props.view && !focusing) {
       const [a, b, c, d] = props.layers.bounds
       map.current!.fitBounds(
         [
@@ -276,7 +285,22 @@ export default function MapView(props: MapViewProps) {
     if (ready) set('cells', props.cells)
   }, [ready, props.cells])
   useEffect(() => {
-    if (ready) set('route', props.route ?? null)
+    if (!ready) return
+    set('route', props.route ?? null)
+    const coords = (props.route?.geometry as GeoJSON.LineString | undefined)?.coordinates
+    if (props.focusRoute && coords?.length) {
+      fitted.current = true
+      const xs = coords.map((c) => c[0])
+      const ys = coords.map((c) => c[1])
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      map.current!.fitBounds(
+        [
+          [Math.min(...xs), Math.min(...ys)],
+          [Math.max(...xs), Math.max(...ys)],
+        ],
+        { padding: { top: 90, bottom: 90, left: 70, right: 70 }, maxZoom: 14.6, duration: reduce ? 0 : 600 },
+      )
+    }
   }, [ready, props.route])
   useEffect(() => {
     if (!ready) return
@@ -321,7 +345,7 @@ export default function MapView(props: MapViewProps) {
   )
 }
 
-export function MapLegend({ showClasses = true, children, toggles }: { showClasses?: boolean; children?: ReactNode; toggles?: ReactNode }) {
+export function MapLegend({ showClasses = true, children, toggles, showHidden = false }: { showClasses?: boolean; children?: ReactNode; toggles?: ReactNode; showHidden?: boolean }) {
   // Terbuka di layar lebar; di ponsel tertutup agar tidak menutupi peta.
   const [open, setOpen] = useState(() => typeof window === 'undefined' || window.matchMedia('(min-width: 673px)').matches)
   return (
@@ -337,6 +361,12 @@ export function MapLegend({ showClasses = true, children, toggles }: { showClass
                 {c === 'cukup' ? 'Cukup' : c === 'rawan' ? 'Rawan' : c === 'terlambat' ? 'Terlambat' : 'Terputus'}
               </li>
             ))}
+            {showHidden && (
+              <li>
+                <span className="swatch swatch-hidden" aria-hidden="true" />
+                Disembunyikan (&lt; 10 jiwa)
+              </li>
+            )}
           </ul>
         </>
       )}

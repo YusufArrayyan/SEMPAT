@@ -91,6 +91,7 @@ def test_alur_utama(client):
     assert pub.status_code == 200
     pc = client.get(f"/api/public/{share['token']}/cells").json()
     assert all("penduduk" not in f["properties"] for f in pc["features"])
+    assert all(set(f["properties"]) == {"id", "kelas"} for f in pc["features"] if f["properties"]["kelas"] == "disembunyikan")
     assert client.get(f"/api/runs/{rid}").status_code == 401
 
 

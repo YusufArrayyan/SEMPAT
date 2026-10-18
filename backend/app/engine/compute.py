@@ -177,6 +177,12 @@ def shelter_loads(pop: np.ndarray, d: Distances, shelters: Shelters) -> list[dic
     return rows
 
 
+def _id(v: float, decimals: int | None = None) -> str:
+    """Angka gaya Indonesia: koma desimal."""
+    s = f"{v:.{decimals}f}" if decimals is not None else f"{v:g}"
+    return s.replace(".", ",")
+
+
 def priorities(
     pop: np.ndarray,
     kel: np.ndarray,
@@ -216,7 +222,7 @@ def priorities(
             reasons.append(
                 {
                     "rule": 2,
-                    "text": f"Penduduk Terlambat hanya muncul karena jeda respons {p.delay_min:g} menit.",
+                    "text": f"Penduduk Terlambat hanya muncul karena jeda respons {_id(p.delay_min)} menit.",
                     "value": f"{pop_late:,.0f} jiwa; 0 jiwa pada jeda 0".replace(",", "."),
                 }
             )
@@ -229,8 +235,8 @@ def priorities(
             reasons.append(
                 {
                     "rule": 3,
-                    "text": f"Rasio jarak jaringan terhadap garis lurus > {p.detour_threshold:g} pada sel Terlambat.",
-                    "value": f"{int(detour.sum())} sel; rasio maks {float(np.nanmax(ratio[detour])):.2f}",
+                    "text": f"Rasio jarak jaringan terhadap garis lurus > {_id(p.detour_threshold)} pada sel Terlambat.",
+                    "value": f"{int(detour.sum())} sel; rasio maks {_id(float(np.nanmax(ratio[detour])), 2)}",
                 }
             )
         late_day = float(pop[mk & (cls_day == TERLAMBAT)].sum())
@@ -240,7 +246,7 @@ def priorities(
             reasons.append(
                 {
                     "rule": 4,
-                    "text": f"Penduduk Terlambat bertambah saat faktor malam {p.night_factor:g} diterapkan.",
+                    "text": f"Penduduk Terlambat bertambah saat faktor malam {_id(p.night_factor)} diterapkan.",
                     "value": f"{late_day:,.0f} → {late_night:,.0f} jiwa".replace(",", "."),
                 }
             )
@@ -248,7 +254,7 @@ def priorities(
         over = [j for j in served if load_by_idx.get(j) is not None and load_by_idx[j] > 1]
         if over:
             flags.append("perluas_kapasitas")
-            names = ", ".join(f"{shelters.label(j)} (B={load_by_idx[j]:.2f})" for j in over[:3])
+            names = ", ".join(f"{shelters.label(j)} (B = {_id(load_by_idx[j], 2)})" for j in over[:3])
             reasons.append(
                 {
                     "rule": 5,

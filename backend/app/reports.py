@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import csv
 import io
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.platypus import Image as RLImage
 from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from reportlab.graphics.shapes import Drawing, Line, Rect, String
 from sqlalchemy import select
@@ -23,6 +25,7 @@ from .config import PUBLIC_MIN_CELL_POP
 from .models import Area, AreaResult, CellResult, Dataset, PopulationCell, PriorityItem, Run, Scenario, ShelterResult
 
 WIB = timezone(timedelta(hours=7))
+LOGO_PATH = Path(__file__).with_name("sempat-logo.png")
 DISCLAIMER = "Hasil ini adalah uji kecukupan tempat evakuasi pada skenario terpilih, bukan prediksi tsunami."
 CLASS_LABEL = {"cukup": "Cukup", "rawan": "Rawan", "terlambat": "Terlambat", "terputus": "Terputus"}
 CLASS_COLOR = {"cukup": "#009e73", "rawan": "#f0e442", "terlambat": "#882255", "terputus": "#8c8c8c"}
@@ -135,10 +138,13 @@ def cells_geojson(db: Session, run: Run, public: bool = False) -> dict:
         for dx, dy in ((-half, -half), (half, -half), (half, half), (-half, half)):
             corners.append(points_to_lonlat(xy + np.array([dx, dy])))
         for i, (cr, pc) in enumerate(rows):
-            if public and pc.population < PUBLIC_MIN_CELL_POP:
-                continue
+            hidden = public and pc.population < PUBLIC_MIN_CELL_POP
             ring = [[round(float(corners[k][i, 0]), 6), round(float(corners[k][i, 1]), 6)] for k in range(4)]
             ring.append(ring[0])
+            if hidden:
+                # Hanya lokasi; kelas dan angka disembunyikan (privasi tampilan publik).
+                feats.append({"type": "Feature", "id": cr.cell_id, "geometry": {"type": "Polygon", "coordinates": [ring]}, "properties": {"id": cr.cell_id, "kelas": "disembunyikan"}})
+                continue
             props = {
                 "id": cr.cell_id,
                 "kelas": cr.cls,
@@ -243,7 +249,11 @@ def export_pdf(db: Session, run: Run, public: bool = False) -> bytes:
 
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=18 * mm, title="Laporan Sempat", author="Sempat")
     story = []
-    story.append(_p("Laporan uji kecukupan TES" + (" - ringkasan publik" if public else ""), S_TITLE))
+    logo = RLImage(str(LOGO_PATH), width=14 * mm, height=14 * mm)
+    title = _p("Laporan uji kecukupan TES" + (" - ringkasan publik" if public else ""), S_TITLE)
+    head = Table([[logo, title]], colWidths=[18 * mm, None])
+    head.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
+    story.append(head)
     story.append(_p(f"Kota Bengkulu - skenario <b>{sc.name}</b> - dibuat {created}", S_MUTED))
     story.append(_p(f"<b>Penafian.</b> {DISCLAIMER} Parameter di bawah adalah masukan, bukan hasil temuan; beberapa masih perlu kalibrasi bersama BPBD.", S_NOTE))
 

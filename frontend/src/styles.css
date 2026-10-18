@@ -830,6 +830,9 @@ table.dt tfoot td {
   background-color: var(--cls-terputus);
   background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.8) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.8) 0 1px, transparent 1px 4px);
 }
+.swatch-hidden {
+  background: #e8e8e8 linear-gradient(transparent 7px, #a8a8a8 7px, #a8a8a8 9px, transparent 9px);
+}
 .cls-label {
   display: inline-flex;
   align-items: center;

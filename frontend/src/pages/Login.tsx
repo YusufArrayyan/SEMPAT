@@ -44,7 +44,7 @@ export default function Login() {
     <div className="login">
       <section className="login-art" aria-label="Tentang Sempat">
         <div className="row" style={{ gap: 10 }}>
-          <Logo />
+          <Logo size={40} />
           <b style={{ fontWeight: 600 }}>Sempat</b>
           <span style={{ color: 'var(--inverse-muted)' }}>v1.0</span>
         </div>

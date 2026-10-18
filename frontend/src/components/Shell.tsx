@@ -5,13 +5,9 @@ import { api } from '../lib/api'
 import { ROLE_LABEL, useAuth } from '../lib/auth'
 import { Icon } from './ui'
 
-export function Logo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M4 23c3.5-7 7-10.5 12-10.5S24.5 16 28 23" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <rect x="14" y="5" width="4" height="8" fill="#4589ff" />
-    </svg>
-  )
+/** Logo resmi Sempat (gelombang, jam, rumah). Dekoratif: nama selalu tertulis di sebelahnya. */
+export function Logo({ size = 28 }: { size?: number }) {
+  return <img src="/brand/sempat-logo.png" width={size} height={size} alt="" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }} />
 }
 
 export default function Shell() {

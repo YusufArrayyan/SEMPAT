@@ -61,7 +61,7 @@ export default function PublicView() {
       {header}
       <main className="workspace" id="main">
         <div className="workspace-map">
-          <MapView label="Peta kelas sisa waktu (tampilan publik). Sel berpenduduk kurang dari 10 jiwa disembunyikan." layers={d.layers} cells={cells.data} route={cell.data?.route} selectedCell={cellId} onCellClick={setCellId}>
+          <MapView label="Peta kelas sisa waktu (tampilan publik). Sel berpenduduk kurang dari 10 jiwa disembunyikan." layers={d.layers} cells={cells.data} route={cell.data?.route} focusRoute selectedCell={cellId} onCellClick={setCellId}>
             <div className="map-overlay map-params">
               <span>
                 τ <b>{dec1(s.effective_delay_min)}</b> mnt
@@ -73,7 +73,7 @@ export default function PublicView() {
                 <b>{MODE_LABEL[d.run.params.mode]}</b>
               </span>
             </div>
-            <MapLegend />
+            <MapLegend showHidden />
           </MapView>
         </div>
         <aside className="workspace-panel" aria-label="Ringkasan hasil">

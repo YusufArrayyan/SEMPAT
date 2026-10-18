@@ -210,6 +210,7 @@ export default function Results() {
           roads={vis.roads ? roads.data : null}
           cells={cells.data}
           route={cell.data?.route ?? null}
+          focusRoute
           selectedCell={cellId}
           hypothetical={hypo}
           blocked={s?.blocked_segments ?? []}
