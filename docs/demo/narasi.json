@@ -1,0 +1,28 @@
+{
+  "voice": "id-ID-GadisNeural",
+  "rate": "+4%",
+  "lines": [
+    { "id": "judul", "caption": "", "say": "Ini Sempat, aplikasi web untuk menguji apakah warga Kota Bengkulu sempat mencapai tempat evakuasi sementara sebelum gelombang tsunami tiba." },
+    { "id": "masuk", "caption": "Masuk dengan akun demo berperan Analis.", "say": "Kita masuk dengan akun demo berperan Analis." },
+    { "id": "dasbor", "caption": "Dasbor: dataset terbit, hasil terakhir, peringatan kualitas data, dan panduan alur pertama.", "say": "Dasbor menampilkan dataset yang sudah terbit, hasil perhitungan terakhir, dan peringatan kualitas data." },
+    { "id": "data", "caption": "Data TES, jalan, wilayah, penduduk, dan zona genangan diimpor lalu divalidasi otomatis.", "say": "Di menu Data, berkas tempat evakuasi, jaringan jalan, batas wilayah, penduduk, dan zona genangan diimpor, lalu diperiksa otomatis." },
+    { "id": "validasi", "caption": "Laporan validasi menolak TES yang salah koordinat dan memberi tanda pada data yang belum lengkap.", "say": "Laporan validasi menolak tempat evakuasi yang koordinatnya salah, dan menandai data yang belum lengkap." },
+    { "id": "skenario", "caption": "Skenario menyimpan parameter rumus sisa waktu: jeda respons, waktu tiba gelombang, dan moda.", "say": "Skenario menyimpan parameter perhitungan: jeda respons, waktu tiba gelombang, dan moda evakuasi." },
+    { "id": "jeda", "caption": "Ubah jeda respons menjadi 10 menit: warga baru mulai bergerak 10 menit setelah gempa.", "say": "Kita atur jeda respons menjadi sepuluh menit. Artinya, warga baru mulai bergerak sepuluh menit setelah gempa." },
+    { "id": "jalankan", "caption": "Jalankan perhitungan: jarak terpendek lewat jalan dari setiap sel 100 m ke TES terdekat.", "say": "Sistem menghitung jarak terpendek lewat jalan, dari setiap sel seratus meter ke tempat evakuasi terdekat." },
+    { "id": "peta", "caption": "Hasil langsung tampil di peta: hijau Cukup, kuning Rawan, ungu bertitik Terlambat.", "say": "Hasilnya langsung tampil di peta. Hijau berarti cukup, kuning rawan, dan ungu bertitik berarti terlambat." },
+    { "id": "ik", "caption": "Indeks kecukupan kota: porsi penduduk di zona genangan yang sempat mencapai TES.", "say": "Indeks kecukupan menunjukkan berapa persen penduduk di zona genangan yang sempat mencapai tempat evakuasi." },
+    { "id": "klik", "caption": "Klik satu sel Terlambat untuk melihat rutenya.", "say": "Kita klik satu sel yang terlambat." },
+    { "id": "rute", "caption": "Rute biru = jalur terpendek ke TES. Rincian: m = Tₐ − (τ + t); sisa waktu negatif berarti tidak sempat.", "say": "Garis biru adalah jalur terpendek ke tempat evakuasi. Di panel kanan, sisa waktunya negatif. Artinya, warga di sel ini tidak sempat." },
+    { "id": "prioritas", "caption": "Daftar prioritas: kelurahan dengan penduduk Terlambat terbanyak, lengkap dengan rekomendasi dan alasannya.", "say": "Daftar prioritas mengurutkan kelurahan dengan penduduk terlambat terbanyak, lengkap dengan rekomendasi dan alasannya." },
+    { "id": "beban", "caption": "Beban TES: penduduk yang menuju tiap TES dibanding kapasitasnya; beban di atas 1 ditandai merah.", "say": "Beban tempat evakuasi membandingkan jumlah penduduk yang menuju ke sana dengan kapasitasnya." },
+    { "id": "tes_baru", "caption": "Uji intervensi sebelum dibiayai: tambahkan satu TES hipotetis di kawasan yang paling terlambat.", "say": "Sebelum dibiayai, intervensi bisa diuji lebih dulu. Kita tambahkan satu tempat evakuasi baru di kawasan yang paling terlambat." },
+    { "id": "sirene", "caption": "Tambahkan juga percepatan respons 3 menit, misalnya lewat sirene dan latihan rutin.", "say": "Kita juga mempercepat respons tiga menit, misalnya lewat sirene dan latihan rutin." },
+    { "id": "uji", "caption": "Jalankan uji intervensi: sistem menghitung ulang dan membandingkannya dengan skenario dasar.", "say": "Sistem menghitung ulang, lalu membandingkannya dengan skenario dasar." },
+    { "id": "banding", "caption": "Dua peta berdampingan: kiri skenario dasar, kanan dengan intervensi.", "say": "Peta kiri adalah skenario dasar. Peta kanan, dengan intervensi." },
+    { "id": "selisih", "caption": "Hasilnya terukur: kenaikan IK dan jumlah penduduk yang berpindah dari Terlambat ke Sempat.", "say": "Hasilnya terukur. Indeks kecukupan naik, dan ribuan penduduk berpindah dari terlambat menjadi sempat." },
+    { "id": "laporan", "caption": "Ekspor laporan PDF, CSV, dan GeoJSON; setiap angka terikat pada versi data dan parameter.", "say": "Hasil dapat diekspor sebagai laporan PDF, CSV, atau GeoJSON. Setiap angka tercatat bersama versi data dan parameternya." },
+    { "id": "publik", "caption": "Tautan publik baca-saja dapat dibagikan kepada relawan dan warga tanpa akun.", "say": "Tautan publik baca saja juga bisa dibagikan kepada relawan dan warga." },
+    { "id": "penutup", "caption": "", "say": "Sempat adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami. Dari setiap sel permukiman, apakah warga sempat?" }
+  ]
+}

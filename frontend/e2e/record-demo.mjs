@@ -1,14 +1,21 @@
-// Rekam video demo Sempat dengan teks keterangan. Jalankan: node e2e/record-demo.mjs
-// Hasil WebM diubah ke MP4 oleh skrip Python sesudahnya (lihat README docs/demo).
+// Rekam video demo Sempat yang sinkron dengan narasi. Urutan:
+//   1. backend/.venv/Scripts/python docs/demo/tts.py      (buat klip suara + durasi)
+//   2. node e2e/record-demo.mjs                           (rekam video, catat waktu tiap narasi)
+//   3. backend/.venv/Scripts/python docs/demo/mux.py      (gabungkan suara ke MP4)
 import { chromium } from 'playwright-core'
-import { mkdirSync, renameSync, readdirSync, rmSync } from 'node:fs'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 const BASE = process.env.SEMPAT_URL ?? 'http://localhost:5173'
 const OUT = fileURLToPath(new URL('../../docs/demo/', import.meta.url))
 const RAW = `${OUT}_raw/`
 mkdirSync(RAW, { recursive: true })
-const LOGO = pathToFileURL(fileURLToPath(new URL('../public/brand/sempat-logo.png', import.meta.url))).href
+// Kartu judul memuat logo dan fon dari server aplikasi (file:// diblokir peramban).
+const LOGO = `${BASE}/brand/sempat-logo.png`
+const FONT = (w) => `${BASE}/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-${w}-normal.woff2`
+const NARASI = JSON.parse(readFileSync(`${OUT}narasi.json`, 'utf8'))
+const DURASI = JSON.parse(readFileSync(`${OUT}_tts/durasi.json`, 'utf8'))
+const LINE = Object.fromEntries(NARASI.lines.map((l) => [l.id, l]))
 const W = 1440
 const H = 810
 
@@ -25,6 +32,22 @@ await ctx.addInitScript(() => {
       background:rgba(22,22,22,.92);color:#fff;font:500 21px/1.4 'IBM Plex Sans',Arial,sans-serif;padding:12px 22px;
       pointer-events:none;border-left:4px solid #f5a51b;transition:opacity .25s}
     #__cap:empty{opacity:0}`
+  const store = {
+    get: (k, d) => {
+      try {
+        return sessionStorage.getItem(k) ?? d
+      } catch {
+        return d
+      }
+    },
+    set: (k, v) => {
+      try {
+        sessionStorage.setItem(k, v)
+      } catch {
+        /* halaman tanpa origin */
+      }
+    },
+  }
   const boot = () => {
     if (document.getElementById('__cur')) return
     const st = document.createElement('style')
@@ -32,24 +55,26 @@ await ctx.addInitScript(() => {
     document.head.appendChild(st)
     const c = document.createElement('div')
     c.id = '__cur'
-    const p = JSON.parse(sessionStorage.getItem('__curpos') || '[720,400]')
+    const p = JSON.parse(store.get('__curpos', '[720,400]'))
     c.style.left = p[0] + 'px'
     c.style.top = p[1] + 'px'
     document.body.appendChild(c)
     const cap = document.createElement('div')
     cap.id = '__cap'
-    cap.textContent = sessionStorage.getItem('__cap') || ''
+    cap.textContent = store.get('__cap', '')
     document.body.appendChild(cap)
     addEventListener('mousemove', (e) => {
       c.style.left = e.clientX + 'px'
       c.style.top = e.clientY + 'px'
-      sessionStorage.setItem('__curpos', JSON.stringify([e.clientX, e.clientY]))
+      store.set('__curpos', JSON.stringify([e.clientX, e.clientY]))
     }, true)
     addEventListener('mousedown', () => c.classList.add('down'), true)
     addEventListener('mouseup', () => c.classList.remove('down'), true)
   }
+  window.__boot = boot
   window.__setCap = (t) => {
-    sessionStorage.setItem('__cap', t)
+    store.set('__cap', t)
+    boot()
     const el = document.getElementById('__cap')
     if (el) el.textContent = t
   }
@@ -58,13 +83,24 @@ await ctx.addInitScript(() => {
 })
 
 const page = await ctx.newPage()
+const T0 = Date.now()
+const marks = []
 const wait = (ms) => page.waitForTimeout(ms)
-const cap = async (t, ms = 0) => {
-  await page.evaluate((x) => window.__setCap?.(x), t)
-  if (ms) await wait(ms)
+const setCap = (t) => page.evaluate((x) => window.__setCap?.(x), t).catch(() => {})
+// Mulai satu baris narasi: keterangan tampil dan waktunya dicatat; hasilnya fungsi "tunggu narasi selesai".
+const say = async (id) => {
+  const start = Date.now()
+  marks.push({ id, t: (start - T0) / 1000 })
+  await setCap(LINE[id].caption)
+  const end = start + DURASI[id] * 1000 + 450
+  return () => wait(Math.max(0, end - Date.now()))
 }
-// Gerak mouse halus ke elemen lalu klik
-const glide = async (x, y) => page.mouse.move(x, y, { steps: 22 })
+const glide = (x, y) => page.mouse.move(x, y, { steps: 22 })
+const press = async () => {
+  await page.mouse.down()
+  await wait(90)
+  await page.mouse.up()
+}
 const clickOn = async (loc, pause = 350) => {
   let b
   for (let i = 0; i < 6 && !b; i++) {
@@ -80,9 +116,12 @@ const clickOn = async (loc, pause = 350) => {
   if (!b) throw new Error('elemen tidak dapat diklik')
   await glide(b.x + b.width / 2, b.y + b.height / 2)
   await wait(pause)
-  await page.mouse.down()
-  await wait(90)
-  await page.mouse.up()
+  await press()
+}
+const clickXY = async (x, y) => {
+  await glide(x, y)
+  await wait(400)
+  await press()
 }
 const typeIn = async (loc, text) => {
   await clickOn(loc, 200)
@@ -100,71 +139,97 @@ const api = (path, method = 'GET', body) =>
     async ([p, m, b]) => (await fetch(`/api${p}`, { method: m, headers: { 'Content-Type': 'application/json' }, body: b ? JSON.stringify(b) : undefined })).json(),
     [path, method, body],
   )
+const scrollPanelToTabs = () =>
+  page.locator('.workspace-panel').evaluate((el) => {
+    const t = el.querySelector('[role="tablist"]')
+    el.scrollTo({ top: t.offsetTop - 20, behavior: 'smooth' })
+  })
+const card = (inner) => `<!doctype html><html><head><style>
+  @font-face{font-family:Plex;font-weight:300;src:url('${FONT(300)}') format('woff2')}
+  @font-face{font-family:Plex;font-weight:600;src:url('${FONT(600)}') format('woff2')}
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#161616;font-family:Plex,Arial,sans-serif;color:#fff}
+  #__cur{display:none!important}
+  </style></head><body>${inner}</body></html>`
+let cardHtml = ''
+let cardN = 0
+await page.route(`${BASE}/__kartu*`, (route) => route.fulfill({ contentType: 'text/html; charset=utf-8', body: cardHtml }))
+const showCard = async (inner) => {
+  cardHtml = card(inner)
+  await page.goto(`${BASE}/__kartu?n=${++cardN}`)
+  await page.evaluate(async () => {
+    await document.fonts.ready
+    await Promise.all([...document.images].map((i) => (i.complete ? null : new Promise((r) => (i.onload = i.onerror = r)))))
+  })
+}
 
 // --- 0. Kartu judul ---------------------------------------------------------------------------
-await page.setContent(`
-  <body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#161616;font-family:'IBM Plex Sans',Arial,sans-serif;color:#fff">
-    <div style="display:flex;align-items:center;gap:36px;max-width:1100px">
-      <img src="${LOGO}" style="width:170px;height:170px">
-      <div>
-        <div style="font-size:64px;font-weight:600;letter-spacing:-1px">Sempat</div>
-        <div style="font-size:28px;font-weight:300;color:#e0e0e0;margin-top:6px">Uji kecukupan tempat evakuasi sementara tsunami · Kota Bengkulu</div>
-        <div style="font-size:18px;color:#a8a8a8;margin-top:22px">Demo aplikasi web · data contoh sintetis</div>
-      </div>
-    </div>
-  </body>`)
-await wait(4200)
+await showCard(`<div style="display:flex;align-items:center;gap:40px;max-width:1150px">
+  <img src="${LOGO}" style="width:180px;height:180px">
+  <div>
+    <div style="font-size:68px;font-weight:600;letter-spacing:-1px">Sempat</div>
+    <div style="font-size:28px;font-weight:300;color:#e0e0e0;margin-top:6px">Uji kecukupan tempat evakuasi sementara tsunami · Kota Bengkulu</div>
+    <div style="font-size:18px;font-weight:300;color:#a8a8a8;margin-top:22px">Demo aplikasi web · data contoh sintetis</div>
+  </div></div>`)
+await wait(600)
+let done = await say('judul')
+await done()
 
 // --- 1. Masuk ---------------------------------------------------------------------------------
 await page.goto(`${BASE}/masuk`)
-await cap('Masuk dengan akun demo berperan Analis.', 900)
+await page.getByLabel('Surel').waitFor()
+done = await say('masuk')
 await typeIn(page.getByLabel('Surel'), 'demo.analis@sempat.demo')
 await typeIn(page.getByLabel('Kata sandi'), 'DemoAnalis2026')
+await done()
 await clickOn(page.getByRole('button', { name: 'Masuk' }))
 await page.getByRole('heading', { name: 'Dasbor' }).waitFor()
-await cap('Dasbor: dataset terbit, hasil terakhir, peringatan kualitas data, dan panduan alur pertama.', 3800)
+await wait(500)
+done = await say('dasbor')
+await done()
 
 // --- 2. Data -----------------------------------------------------------------------------------
 await clickOn(page.getByRole('navigation', { name: 'Navigasi utama' }).getByRole('link', { name: 'Data' }))
-await page.getByRole('link', { name: /Data contoh/ }).first().waitFor()
 await clickOn(page.getByRole('link', { name: /Data contoh/ }).first())
 await page.getByText('Laporan validasi').waitFor()
-await cap('Data TES, jalan, wilayah, penduduk, dan zona genangan diimpor lalu divalidasi otomatis.', 3000)
-await page.mouse.wheel(0, 900)
-await wait(600)
+done = await say('data')
+await wait(4500)
+await page.mouse.wheel(0, 700)
+await done()
 await page.getByRole('heading', { name: 'Laporan validasi' }).scrollIntoViewIfNeeded()
 await page.mouse.wheel(0, -60)
-await cap('Laporan validasi menolak TES yang salah koordinat dan memberi tanda pada data yang belum lengkap.', 4200)
+done = await say('validasi')
+await done()
 
 // --- 3. Buat skenario --------------------------------------------------------------------------
 await clickOn(page.getByRole('navigation', { name: 'Navigasi utama' }).getByRole('link', { name: 'Skenario' }))
-await cap('Skenario menyimpan parameter rumus sisa waktu: jeda respons, waktu tiba gelombang, dan moda.', 2200)
+done = await say('skenario')
+await wait(1500)
 await clickOn(page.getByRole('button', { name: /Buat skenario/ }).first())
 await page.getByLabel('Nama skenario (opsional)').waitFor()
-await wait(700)
 await typeIn(page.getByLabel('Nama skenario (opsional)'), 'Demo esai — jalan kaki, jeda 10 menit')
+await done()
 await clickOn(page.getByRole('button', { name: 'Buat dan buka editor' }))
 await page.getByRole('button', { name: /Jalankan skenario dasar/ }).waitFor()
-await wait(1500)
+await wait(1200)
 
-await cap('Ubah jeda respons menjadi 10 menit: warga baru mulai bergerak 10 menit setelah gempa.', 800)
-const delay = page.getByLabel('Jeda respons τ')
-await clickOn(delay)
+done = await say('jeda')
+await clickOn(page.getByLabel('Jeda respons τ'))
 await page.keyboard.press('Control+A')
-await page.keyboard.type('10', { delay: 120 })
-await wait(1500)
-await cap('Jalankan perhitungan: jarak terpendek lewat jalan dari setiap sel 100 m ke TES terdekat.', 900)
+await page.keyboard.type('10', { delay: 140 })
+await done()
+done = await say('jalankan')
 await clickOn(page.getByRole('button', { name: /Jalankan skenario dasar/ }))
 await page.getByText('Perhitungan selesai.').waitFor({ timeout: 60000 })
-await wait(2200)
-await cap('Hasil langsung tampil di peta: hijau Cukup, kuning Rawan, ungu bertitik Terlambat.', 3500)
+await done()
+done = await say('peta')
+await done()
 
 // --- 4. Hasil + rute ---------------------------------------------------------------------------
 await clickOn(page.getByRole('button', { name: 'Lihat hasil' }))
 await page.waitForURL(/\/hasil\//)
 await page.getByText('indeks kecukupan kota').waitFor()
-await wait(1800)
-await cap('Indeks kecukupan kota: porsi penduduk di zona genangan yang sempat mencapai TES.', 3800)
+await wait(800)
+done = await say('ik')
 const runId = page.url().split('/hasil/')[1].split('?')[0]
 const cells = (await api(`/runs/${runId}/cells`)).features
 const pick = cells
@@ -173,94 +238,88 @@ const pick = cells
 const ring = pick.geometry.coordinates[0]
 const clon = (ring[0][0] + ring[2][0]) / 2
 const clat = (ring[0][1] + ring[2][1]) / 2
+await done()
 await page.evaluate(([lo, la]) => window.__sempatMap.easeTo({ center: [lo, la], zoom: 13.4, duration: 1600 }), [clon, clat])
-await cap('Klik satu sel Terlambat untuk melihat rutenya.', 2000)
+done = await say('klik')
+await wait(1800)
 const [px, py] = await mapPoint(clon, clat)
-await glide(px, py)
-await wait(400)
-await page.mouse.down()
-await wait(90)
-await page.mouse.up()
+await clickXY(px, py)
 await page.locator('#cell-title').waitFor()
-await wait(1400)
-await cap('Rute biru = jalur terpendek ke TES. Rincian: m = Tₐ − (τ + t); sisa waktu negatif berarti tidak sempat.', 5200)
+await done()
+done = await say('rute')
+await done()
 
-await page.locator('.workspace-panel').evaluate((el) => {
-  const t = el.querySelector('[role="tablist"]')
-  el.scrollTo({ top: t.offsetTop - 20, behavior: 'smooth' })
-})
-await wait(900)
-await clickOn(page.getByRole('tab', { name: /Prioritas/ }))
+await scrollPanelToTabs()
 await wait(700)
+await clickOn(page.getByRole('tab', { name: /Prioritas/ }))
+await wait(500)
 await clickOn(page.locator('details summary', { hasText: 'Syarat yang terpenuhi' }).first())
-await cap('Daftar prioritas: kelurahan dengan penduduk Terlambat terbanyak, lengkap dengan rekomendasi dan alasannya.', 5200)
+done = await say('prioritas')
+await done()
 await clickOn(page.getByRole('tab', { name: 'Beban TES' }))
-await cap('Beban TES: penduduk yang menuju tiap TES dibanding kapasitasnya; beban di atas 1 ditandai merah.', 4200)
+done = await say('beban')
+await done()
 
 // --- 5. Uji intervensi -------------------------------------------------------------------------
 await clickOn(page.getByRole('link', { name: /Demo esai/ }).first())
 await page.getByRole('button', { name: 'Taruh TES hipotetis' }).waitFor()
-await wait(1800)
-await cap('Uji intervensi sebelum dibiayai: tambahkan satu TES hipotetis di kawasan yang paling terlambat.', 1500)
+await wait(1200)
+done = await say('tes_baru')
 await clickOn(page.getByRole('button', { name: 'Taruh TES hipotetis' }))
-await wait(600)
 await page.evaluate(([lo, la]) => window.__sempatMap.easeTo({ center: [lo, la], zoom: 12.6, duration: 1200 }), [clon, clat])
 await wait(1500)
 const [tx, ty] = await mapPoint(clon, clat)
-await glide(tx, ty)
-await wait(400)
-await page.mouse.down()
-await wait(90)
-await page.mouse.up()
+await clickXY(tx, ty)
 await page.getByLabel('Kapasitas (jiwa)').waitFor()
 await typeIn(page.getByLabel('Kapasitas (jiwa)'), '3000')
 await clickOn(page.getByRole('button', { name: 'Tambahkan TES' }))
-await wait(900)
-await cap('Tambahkan juga percepatan respons 3 menit, misalnya lewat sirene dan latihan rutin.', 1200)
+await done()
+done = await say('sirene')
 await clickOn(page.getByRole('button', { name: 'Tambah', exact: true }))
-await wait(1400)
-await cap('Jalankan uji intervensi: sistem menghitung ulang dan membandingkannya dengan skenario dasar.', 900)
+await done()
+done = await say('uji')
 await clickOn(page.getByRole('button', { name: /Uji \d+ intervensi/ }))
 await page.getByText('Perhitungan selesai.').waitFor({ timeout: 60000 })
-await wait(1200)
+await done()
 await clickOn(page.getByRole('button', { name: 'Lihat selisih' }))
 await page.waitForURL(/bandingkan/)
 await page.getByText('Selisih IK kota').waitFor()
-await wait(1500)
-await cap('Dua peta berdampingan: kiri skenario dasar, kanan dengan intervensi.', 3500)
+await wait(1200)
+done = await say('banding')
+await done()
 await page.getByText('Selisih IK kota').scrollIntoViewIfNeeded()
 await page.mouse.wheel(0, 120)
-await cap('Hasilnya terukur: kenaikan IK dan jumlah penduduk yang berpindah dari Terlambat ke Sempat.', 5200)
+done = await say('selisih')
+await done()
 
 // --- 6. Laporan --------------------------------------------------------------------------------
 const b = new URL(page.url()).searchParams.get('b')
 await page.goto(`${BASE}/hasil/${b}?tab=laporan`)
 await page.getByText('indeks kecukupan kota').waitFor()
-await page.locator('.workspace-panel').evaluate((el) => {
-  const t = el.querySelector('[role="tablist"]')
-  el.scrollTop = t.offsetTop - 20
-})
-await wait(800)
-await cap('Ekspor laporan PDF, CSV, dan GeoJSON; setiap angka terikat pada versi data dan parameter.', 4500)
-await cap('Tautan publik baca-saja dapat dibagikan kepada relawan dan warga tanpa akun.', 3500)
+await scrollPanelToTabs()
+await wait(900)
+done = await say('laporan')
+await done()
+await page.locator('.workspace-panel').evaluate((el) => el.scrollBy({ top: 260, behavior: 'smooth' }))
+done = await say('publik')
+await done()
 
 // --- 7. Penutup --------------------------------------------------------------------------------
-await cap('', 0)
-await page.setContent(`
-  <body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#161616;font-family:'IBM Plex Sans',Arial,sans-serif;color:#fff">
-    <div style="text-align:center;max-width:1000px">
-      <img src="${LOGO}" style="width:120px;height:120px">
-      <div style="font-size:40px;font-weight:300;margin-top:24px">Dari setiap sel permukiman, apakah warga sempat?</div>
-      <div style="font-size:20px;color:#c6c6c6;margin-top:18px">Hasil adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami.</div>
-      <div style="font-size:18px;color:#f5a51b;margin-top:30px">sempat.onrender.com</div>
-    </div>
-  </body>`)
-await wait(4500)
+await setCap('')
+await showCard(`<div style="text-align:center;max-width:1050px">
+  <img src="${LOGO}" style="width:130px;height:130px">
+  <div style="font-size:42px;font-weight:300;margin-top:26px">Dari setiap sel permukiman, apakah warga sempat?</div>
+  <div style="font-size:20px;font-weight:300;color:#c6c6c6;margin-top:18px">Hasil adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami.</div>
+  <div style="font-size:19px;color:#f5a51b;margin-top:30px">sempat.onrender.com</div></div>`)
+await setCap('')
+done = await say('penutup')
+await done()
+await wait(1200)
 
 const video = page.video()
 await ctx.close()
-const src = await video.path()
-renameSync(src, `${OUT}sempat-demo.webm`)
+renameSync(await video.path(), `${OUT}sempat-demo.webm`)
 rmSync(RAW, { recursive: true, force: true })
+writeFileSync(`${OUT}_tts/marks.json`, JSON.stringify(marks, null, 1))
 await browser.close()
-console.log('video:', `${OUT}sempat-demo.webm`, readdirSync(OUT))
+console.log('video:', `${OUT}sempat-demo.webm`, 'durasi', ((Date.now() - T0) / 1000).toFixed(1), 'dtk', readdirSync(OUT))

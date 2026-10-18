@@ -8,3 +8,5 @@ frontend/dist/
 frontend/e2e/shots/
 *.db
 .env
+docs/demo/_tts/
+docs/demo/_raw/
