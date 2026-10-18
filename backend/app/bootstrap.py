@@ -34,6 +34,13 @@ SEED_USERS = [
     ("peneliti@sempat.local", "Peneliti Bappeda", "peneliti", "SEMPAT_PENELITI_PASSWORD", "sempat-peneliti-2026"),
 ]
 
+# Akun demo untuk juri/pembaca esai. Dibuat bila belum ada, juga pada basis data yang sudah berisi.
+# Matikan dengan SEMPAT_DEMO_ACCOUNTS=0. Peran Admin sengaja tidak dibagikan.
+DEMO_USERS = [
+    ("demo.analis@sempat.demo", "Demo Analis", "analis", "SEMPAT_DEMO_ANALIS_PASSWORD", "DemoAnalis2026"),
+    ("demo.peneliti@sempat.demo", "Demo Peneliti", "peneliti", "SEMPAT_DEMO_PENELITI_PASSWORD", "DemoPeneliti2026"),
+]
+
 SAMPLE_FILES = [
     ("wilayah", "wilayah.geojson"),
     ("penduduk", "penduduk.csv"),
@@ -89,6 +96,12 @@ def seed(with_sample: bool = True) -> None:
                     log.warning("%s kosong; kata sandi acak untuk %s: %s (ganti setelah masuk)", env, email, pw)
             db.commit()
             log.info("akun awal dibuat")
+        if os.getenv("SEMPAT_DEMO_ACCOUNTS", "1") == "1":
+            for email, name, role, env, default in DEMO_USERS:
+                if not db.scalar(select(User).where(User.email == email)):
+                    db.add(User(email=email, name=name, role=role, password_hash=hash_password(os.getenv(env) or default)))
+                    log.info("akun demo dibuat: %s", email)
+            db.commit()
         if with_sample and not db.scalar(select(Dataset)):
             seed_sample(db)
     finally:

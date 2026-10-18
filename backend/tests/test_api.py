@@ -134,3 +134,11 @@ def test_peran_dibatasi(client):
     login(client, "peneliti")
     assert client.get("/api/users").status_code == 403
     assert client.get("/api/audit").status_code == 403
+
+
+def test_akun_demo(client):
+    r = client.post("/api/auth/login", json={"email": "demo.analis@sempat.demo", "password": "DemoAnalis2026"})
+    assert r.status_code == 200 and r.json()["user"]["role"] == "analis"
+    r = client.post("/api/auth/login", json={"email": "demo.peneliti@sempat.demo", "password": "DemoPeneliti2026"})
+    assert r.status_code == 200 and r.json()["user"]["role"] == "peneliti"
+    assert client.get("/api/users").status_code == 403

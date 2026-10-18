@@ -166,6 +166,8 @@ export default function MapView(props: MapViewProps) {
     m.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right')
     m.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Data contoh sintetis · Sempat' }), 'bottom-right')
     map.current = m
+    // Untuk skrip uji ujung ke ujung dan perekaman demo.
+    ;(window as unknown as { __sempatMap?: MLMap }).__sempatMap = m
 
     m.on('load', () => {
       for (const c of ['cukup', 'rawan', 'terlambat', 'terputus', 'disembunyikan'] as const) m.addImage(`pat-${c}`, patternImage(c), { pixelRatio: 2 })

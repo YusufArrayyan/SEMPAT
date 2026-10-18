@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<title>Panduan Akun Demo dan Penggunaan Sempat</title>
+<style>
+  @font-face { font-family: Plex; font-weight: 300; src: url('../../frontend/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-300-normal.woff2') format('woff2'); }
+  @font-face { font-family: Plex; font-weight: 400; src: url('../../frontend/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2') format('woff2'); }
+  @font-face { font-family: Plex; font-weight: 600; src: url('../../frontend/node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2') format('woff2'); }
+  @font-face { font-family: PlexMono; font-weight: 400; src: url('../../frontend/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); }
+  @page { size: A4; margin: 0; }
+  :root { --ink: #161616; --muted: #525252; --hair: #e0e0e0; --surf: #f4f4f4; --blue: #0f62fe; --brand: #1570cd; --orange: #f5a51b;
+          --cukup: #009e73; --rawan: #f0e442; --terlambat: #882255; --terputus: #8c8c8c; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Plex, Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .page { width: 210mm; height: 297mm; padding: 16mm 16mm 14mm; position: relative; page-break-after: always; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  .run { position: absolute; left: 16mm; right: 16mm; bottom: 9mm; display: flex; justify-content: space-between; font-size: 8pt; color: var(--muted); border-top: 1px solid var(--hair); padding-top: 3mm; }
+  h1 { font-weight: 300; font-size: 30pt; line-height: 1.12; letter-spacing: -0.3px; }
+  h2 { font-weight: 400; font-size: 18pt; line-height: 1.2; margin-bottom: 4mm; }
+  h3 { font-weight: 600; font-size: 11.5pt; margin-bottom: 1.5mm; }
+  p { margin-bottom: 2.5mm; }
+  .muted { color: var(--muted); }
+  .mono { font-family: PlexMono, Consolas, monospace; }
+  .eyebrow { font-size: 9pt; color: var(--muted); letter-spacing: .3px; margin-bottom: 3mm; }
+  .shot { width: 100%; display: block; border: 1px solid var(--hair); }
+  .shot.sm { width: 86%; margin: 0 auto; }
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 7mm; height: 7mm; border-radius: 50%; background: var(--orange); font-weight: 600; font-size: 10pt; margin-right: 3mm; flex-shrink: 0; }
+  .step { display: flex; align-items: center; margin: 0 0 2.5mm; }
+  .step h2 { margin: 0; }
+  .note { background: var(--surf); border-left: 3px solid var(--blue); padding: 3mm 4mm; font-size: 9.5pt; margin: 3mm 0; }
+  .warn { border-left-color: var(--orange); background: #fff7e6; }
+  ol.tips, ul.tips { padding-left: 5mm; margin: 2mm 0 3mm; }
+  ol.tips li, ul.tips li { margin-bottom: 1.4mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .cap { font-size: 8.5pt; color: var(--muted); margin-top: 1.5mm; margin-bottom: 4mm; }
+  .eq { font-family: PlexMono, monospace; background: var(--surf); padding: 3mm 4mm; font-size: 11pt; margin: 2mm 0 4mm; }
+  .sw { display: inline-block; width: 4mm; height: 4mm; vertical-align: -0.6mm; margin-right: 2mm; border: 1px solid rgba(0,0,0,.5); }
+  b { font-weight: 600; }
+
+  /* Sampul */
+  .cover { background: #161616; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .logo { width: 34mm; height: 34mm; }
+  .cover h1 { color: #fff; font-size: 34pt; margin-top: 10mm; }
+  .cover .sub { color: #c6c6c6; font-size: 13pt; margin-top: 5mm; max-width: 150mm; }
+  .cover .url { margin-top: 12mm; display: inline-block; background: #262626; padding: 4mm 6mm; font-size: 14pt; }
+  .cover .url span { color: #c6c6c6; font-size: 9pt; display: block; margin-bottom: 1mm; }
+  .cover .bottom { font-size: 9pt; color: #c6c6c6; border-top: 1px solid #393939; padding-top: 4mm; display: flex; justify-content: space-between; }
+  .cover .stripe { position: absolute; right: 0; top: 0; bottom: 0; width: 6mm; background: linear-gradient(var(--brand), var(--brand) 70%, var(--orange) 70%); }
+
+  /* Kartu akun */
+  .acc { border: 1px solid var(--ink); margin-bottom: 4mm; }
+  .acc .h { display: flex; justify-content: space-between; align-items: center; padding: 3mm 5mm; background: var(--ink); color: #fff; }
+  .acc .h b { font-size: 12pt; }
+  .acc .tag { font-size: 8.5pt; background: var(--orange); color: #161616; padding: 0.8mm 3mm; border-radius: 3mm; font-weight: 600; }
+  .acc .b { display: grid; grid-template-columns: 34mm 1fr; }
+  .acc .b > div { padding: 2.1mm 5mm; border-top: 1px solid var(--hair); }
+  .acc .b > div:nth-child(odd) { color: var(--muted); background: var(--surf); }
+  .acc .cred { font-family: PlexMono, monospace; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 2mm 0 4mm; }
+  th, td { text-align: left; padding: 1.5mm 3mm; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  th { background: var(--surf); font-weight: 600; }
+  td.y { color: #198038; font-weight: 600; } td.n { color: #8d8d8d; }
+</style>
+</head>
+<body>
+
+<!-- 1. Sampul -->
+<section class="page cover">
+  <div class="stripe"></div>
+  <div>
+    <img class="logo" src="../../frontend/public/brand/sempat-logo.png" alt="Logo Sempat" />
+    <h1>Panduan akun demo dan penggunaan Sempat</h1>
+    <p class="sub">Aplikasi web pendukung keputusan untuk menguji apakah warga di setiap sel permukiman Kota Bengkulu sempat mencapai tempat evakuasi sementara (TES) sebelum gelombang tsunami tiba.</p>
+    <div class="url"><span>Alamat aplikasi</span><span class="mono" style="color:#fff;font-size:14pt;margin:0">{{URL}}</span></div>
+  </div>
+  <div class="bottom"><span>Sempat v1.0 · mesin hitung 1.0.0</span><span>{{TANGGAL}}</span></div>
+</section>
+
+<!-- 2. Akun demo -->
+<section class="page">
+  <p class="eyebrow">Bagian 1</p>
+  <h2>Akun demo</h2>
+  <p>Gunakan salah satu akun berikut untuk mencoba aplikasi. Kedua akun memakai data contoh yang sama, jadi perubahan dari satu pengguna dapat terlihat oleh pengguna lain.</p>
+
+  <div class="acc">
+    <div class="h"><b>Demo Analis</b><span class="tag">Disarankan untuk penilai</span></div>
+    <div class="b">
+      <div>Surel</div><div class="cred">demo.analis@sempat.demo</div>
+      <div>Kata sandi</div><div class="cred">DemoAnalis2026</div>
+      <div>Peran</div><div>Analis — semua fitur kecuali kelola akun dan log audit</div>
+    </div>
+  </div>
+  <div class="acc">
+    <div class="h"><b>Demo Peneliti</b><span class="tag" style="background:#c6c6c6">Akses terbatas</span></div>
+    <div class="b">
+      <div>Surel</div><div class="cred">demo.peneliti@sempat.demo</div>
+      <div>Kata sandi</div><div class="cred">DemoPeneliti2026</div>
+      <div>Peran</div><div>Peneliti — jalankan skenario dan uji intervensi; tidak dapat menerbitkan data atau membuat tautan publik</div>
+    </div>
+  </div>
+
+  <h3>Hak akses menurut peran</h3>
+  <table>
+    <tr><th>Fitur</th><th>Admin</th><th>Analis</th><th>Peneliti</th><th>Tamu (tautan publik)</th></tr>
+    <tr><td>Kelola akun dan peran, log audit</td><td class="y">Ya</td><td class="n">Tidak</td><td class="n">Tidak</td><td class="n">Tidak</td></tr>
+    <tr><td>Impor dan validasi data</td><td class="y">Ya</td><td class="y">Ya</td><td class="y">Ya</td><td class="n">Tidak</td></tr>
+    <tr><td>Terbitkan versi dataset</td><td class="y">Ya</td><td class="y">Ya</td><td class="n">Tidak</td><td class="n">Tidak</td></tr>
+    <tr><td>Buat dan jalankan skenario, uji intervensi</td><td class="y">Ya</td><td class="y">Ya</td><td class="y">Ya</td><td class="n">Tidak</td></tr>
+    <tr><td>Lihat peta dan indeks hasil</td><td class="y">Ya</td><td class="y">Ya</td><td class="y">Ya</td><td class="y">Ya</td></tr>
+    <tr><td>Ekspor laporan dan data</td><td class="y">Ya</td><td class="y">Ya</td><td class="y">Ya</td><td>PDF ringkasan</td></tr>
+    <tr><td>Buat tautan publik</td><td class="y">Ya</td><td class="y">Ya</td><td class="n">Tidak</td><td class="n">Tidak</td></tr>
+  </table>
+
+  <div class="note warn"><b>Server bisa sedang tidur.</b> Aplikasi berjalan di paket gratis Render. Bila tidak diakses selama 15 menit, server tidur dan butuh sekitar 1 menit untuk bangun pada akses berikutnya. Tunggu, lalu muat ulang halaman.</div>
+  <div class="note"><b>Data contoh, bukan data resmi.</b> Peta, jalan, TES, dan penduduk dalam aplikasi adalah data sintetis yang meniru bentuk Kota Bengkulu, dibuat agar seluruh alur dapat dicoba. Angka hasil tidak menggambarkan kondisi lapangan.</div>
+  <div class="run"><span>Sempat · Panduan akun demo</span><span>2</span></div>
+</section>
+
+<!-- 3. Konsep -->
+<section class="page">
+  <p class="eyebrow">Bagian 2</p>
+  <h2>Cara Sempat menghitung</h2>
+  <p>Satu rumus menjadi inti sistem. Sisa waktu sama dengan waktu tiba gelombang dikurangi jeda respons dan waktu tempuh ke TES terdekat lewat jaringan jalan.</p>
+  <div class="eq">m = Tₐ − (τ + d / 60v)</div>
+  <table>
+    <tr><th style="width:24mm">Simbol</th><th>Arti</th><th style="width:40mm">Nilai awal</th></tr>
+    <tr><td class="mono">Tₐ</td><td>Waktu tiba gelombang</td><td>20 atau 25 menit</td></tr>
+    <tr><td class="mono">τ</td><td>Jeda respons: waktu sebelum warga mulai bergerak</td><td>0, 5, atau 10 menit</td></tr>
+    <tr><td class="mono">d</td><td>Jarak terpendek lewat jalan dari sel ke TES terdekat</td><td>dihitung (meter)</td></tr>
+    <tr><td class="mono">v</td><td>Kecepatan: jalan kaki atau kendaraan, dikali faktor malam</td><td>1,09 / 2,49 m/detik</td></tr>
+    <tr><td class="mono">b</td><td>Margin pengaman</td><td>2 menit</td></tr>
+  </table>
+  <h3>Empat kelas sisa waktu</h3>
+  <table>
+    <tr><td style="width:40mm"><span class="sw" style="background:var(--cukup)"></span><b>Cukup</b></td><td>m ≥ b — sempat dengan cadangan waktu</td></tr>
+    <tr><td><span class="sw" style="background:var(--rawan) repeating-linear-gradient(45deg,rgba(0,0,0,.5) 0 1px,transparent 1px 3px)"></span><b>Rawan</b></td><td>0 ≤ m &lt; b — sempat, tetapi tidak tahan galat parameter</td></tr>
+    <tr><td><span class="sw" style="background-color:var(--terlambat);background-image:radial-gradient(#fff 0.6px,transparent 0.8px);background-size:3px 3px"></span><b>Terlambat</b></td><td>m &lt; 0 — tidak sempat; masuk daftar intervensi</td></tr>
+    <tr><td><span class="sw" style="background:var(--terputus)"></span><b>Terputus</b></td><td>Tidak ada jalur jalan ke TES; perlu perbaikan data</td></tr>
+  </table>
+  <p><b>Indeks kecukupan (IK)</b> adalah porsi penduduk di zona genangan yang termasuk Cukup atau Rawan. Indeks dihitung per kecamatan, per kelurahan, dan untuk seluruh kota.</p>
+  <div class="note">Sempat bukan sistem peringatan dini, tidak memprediksi tsunami, dan tidak memberi arahan rute kepada warga. Hasilnya adalah uji kecukupan pada skenario terpilih untuk mendukung kajian BPBD.</div>
+  <div class="run"><span>Sempat · Cara menghitung</span><span>3</span></div>
+</section>
+
+<!-- 4. Masuk & dasbor -->
+<section class="page">
+  <p class="eyebrow">Bagian 3 · Langkah penggunaan</p>
+  <div class="step"><span class="num">1</span><h2>Masuk</h2></div>
+  <p>Buka alamat aplikasi, isi surel dan kata sandi akun demo, lalu tekan <b>Masuk</b>.</p>
+  <img class="shot sm" src="img/01-masuk.png" />
+  <p class="cap">Halaman masuk. Bagian kiri menjelaskan pertanyaan yang dijawab aplikasi.</p>
+  <div class="step"><span class="num">2</span><h2>Baca dasbor</h2></div>
+  <p>Dasbor menampilkan dataset yang terbit, IK kota dari hasil terakhir, peringatan kualitas data, dan panduan empat langkah untuk pengguna baru.</p>
+  <img class="shot sm" src="img/02-dasbor.png" />
+  <div class="run"><span>Sempat · Langkah 1–2</span><span>4</span></div>
+</section>
+
+<!-- 5. Data -->
+<section class="page">
+  <div class="step"><span class="num">3</span><h2>Periksa data</h2></div>
+  <p>Menu <b>Data</b> berisi enam jenis berkas: TES, jaringan jalan, batas wilayah, penduduk, zona genangan, dan sirene. Data contoh sudah diimpor dan diterbitkan, jadi langkah ini cukup dilihat.</p>
+  <img class="shot" src="img/03-data.png" />
+  <p class="cap">Tata kelola data (sumber, lisensi, tanggal akses) dan pratinjau peta.</p>
+  <img class="shot" src="img/04-validasi.png" />
+  <p class="cap">Laporan validasi otomatis. Dua TES contoh sengaja salah agar pemeriksaan terlihat: TES dataran tinggi di zona genangan ditolak, dan TES tanpa tipe diberi tanda.</p>
+  <div class="run"><span>Sempat · Langkah 3</span><span>5</span></div>
+</section>
+
+<!-- 6. Skenario -->
+<section class="page">
+  <div class="step"><span class="num">4</span><h2>Buka atau buat skenario</h2></div>
+  <p>Menu <b>Skenario</b> berisi dua preset: <b>Esai 2026</b> (jeda 5 menit, gelombang 20 menit) dan <b>Fachri 2022</b> (jeda 0, gelombang 25 menit). Tekan <b>Buat skenario</b> untuk membuat skenario sendiri, atau klik nama skenario untuk membuka editornya.</p>
+  <img class="shot sm" src="img/05-skenario.png" />
+  <p class="cap">Daftar skenario dengan IK hasil terakhir.</p>
+  <div class="step"><span class="num">5</span><h2>Atur parameter, lalu jalankan</h2></div>
+  <ol class="tips">
+    <li>Ubah jeda respons τ, waktu tiba Tₐ, moda, kondisi malam, dan margin pengaman di panel kanan.</li>
+    <li>Tekan <b>Jalankan skenario dasar</b>. Perhitungan selesai dalam kurang dari satu detik.</li>
+    <li>Peta di kiri langsung berwarna menurut kelas sisa waktu.</li>
+  </ol>
+  <img class="shot sm" src="img/06-editor.png" />
+  <div class="run"><span>Sempat · Langkah 4–5</span><span>6</span></div>
+</section>
+
+<!-- 7. Hasil -->
+<section class="page">
+  <div class="step"><span class="num">6</span><h2>Baca peta hasil</h2></div>
+  <p>Layar hasil memperlihatkan IK kota, jumlah penduduk per kelas, dan tabel IK per kecamatan atau kelurahan. Parameter yang membentuk peta selalu tertulis di pojok kanan atas peta.</p>
+  <img class="shot" src="img/08-hasil.png" />
+  <div class="step" style="margin-top:4mm"><span class="num">7</span><h2>Klik sel untuk melihat rute</h2></div>
+  <p>Klik sel berwarna mana pun. Peta memperbesar ke rute terpendek menuju TES terdekat, dan panel kanan menampilkan rincian rumusnya: jarak, waktu tempuh, dan sisa waktu.</p>
+  <img class="shot" src="img/09-rincian-sel.png" />
+  <div class="run"><span>Sempat · Langkah 6–7</span><span>7</span></div>
+</section>
+
+<!-- 8. Prioritas & beban -->
+<section class="page">
+  <div class="step"><span class="num">8</span><h2>Lihat prioritas dan beban TES</h2></div>
+  <p>Tab <b>Prioritas</b> mengurutkan kelurahan menurut jumlah penduduk Terlambat. Setiap kelurahan mendapat satu rekomendasi utama (tambah TES atau percepat respons) dan beberapa penanda. Buka <b>Syarat yang terpenuhi</b> untuk melihat aturan dan angka yang memicunya.</p>
+  <img class="shot" src="img/10-prioritas.png" />
+  <p class="cap">Daftar prioritas dengan alasan per aturan.</p>
+  <p>Tab <b>Beban TES</b> membandingkan penduduk yang menuju tiap TES dengan kapasitasnya. Beban di atas 1 ditandai merah.</p>
+  <img class="shot" src="img/11-beban-tes.png" />
+  <div class="run"><span>Sempat · Langkah 8</span><span>8</span></div>
+</section>
+
+<!-- 9. Intervensi & bandingkan -->
+<section class="page">
+  <div class="step"><span class="num">9</span><h2>Uji intervensi</h2></div>
+  <p>Di editor skenario, gunakan alat di pojok kiri atas peta:</p>
+  <ul class="tips">
+    <li><b>Taruh TES hipotetis</b> — klik lokasi di peta, isi nama dan kapasitas.</li>
+    <li><b>Blokir ruas jalan</b> — klik ruas, misalnya jembatan yang putus.</li>
+    <li><b>Percepat respons</b> — isi berapa menit jeda dapat dipangkas lewat sirene atau latihan.</li>
+  </ul>
+  <p>Lalu tekan <b>Uji intervensi terhadap dasar</b>.</p>
+  <img class="shot" src="img/07-editor-intervensi.png" />
+  <p class="cap">Daftar intervensi aktif dan tombol untuk mengujinya terhadap skenario dasar.</p>
+  <div class="run"><span>Sempat · Langkah 9</span><span>9</span></div>
+</section>
+
+<section class="page">
+  <div class="step"><span class="num">10</span><h2>Bandingkan hasilnya</h2></div>
+  <p>Layar <b>Bandingkan</b> menampilkan dua peta yang bergerak bersamaan, selisih IK, dan jumlah penduduk yang berpindah dari Terlambat ke Sempat.</p>
+  <img class="shot" src="img/13-bandingkan.png" />
+  <p class="cap">Contoh: intervensi pada skenario Esai 2026 menaikkan IK kota dari {{IK_A}} menjadi {{IK_B}} pada data contoh.</p>
+  <img class="shot" src="img/14-bandingkan-tabel.png" />
+  <p class="cap">Selisih IK per kecamatan dan matriks perpindahan kelas penduduk.</p>
+  <div class="run"><span>Sempat · Langkah 10</span><span>10</span></div>
+</section>
+
+<!-- 10. Laporan & penutup -->
+<section class="page">
+  <div class="step"><span class="num">11</span><h2>Unduh laporan dan bagikan</h2></div>
+  <p>Tab <b>Laporan</b> menyediakan PDF 4 halaman (parameter, versi data, peta, indeks, prioritas, beban TES, batasan), CSV, dan GeoJSON. Akun Analis juga dapat membuat <b>tautan publik baca-saja</b> untuk warga atau relawan; tautan ini dapat dibuka tanpa akun.</p>
+  <img class="shot" src="img/12-laporan.png" />
+  <div class="step" style="margin-top:4mm"><span class="num">12</span><h2>Baca metodologi</h2></div>
+  <p>Menu <b>Metodologi</b> memuat rumus, sumber setiap parameter beserta status kalibrasinya, aturan prioritas, dan keterbatasan sistem.</p>
+  <h3 style="margin-top:4mm">Keterbatasan versi 1.0</h3>
+  <ul class="tips">
+    <li>Semua ruas jalan dianggap dua arah; kemacetan dan kemiringan tidak dimodelkan.</li>
+    <li>Penduduk dalam satu sel dianggap merata. Penugasan memakai TES terdekat tanpa memperhitungkan kapasitas.</li>
+    <li>Kecepatan, jeda, dan faktor malam masih perlu dikalibrasi bersama BPBD.</li>
+  </ul>
+  <div class="run"><span>Sempat · Langkah 11–12</span><span>11</span></div>
+</section>
+
+</body>
+</html>
