@@ -267,7 +267,7 @@ class Report(Base):
     __tablename__ = "reports"
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=uid)
     run_id: Mapped[str] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
-    format: Mapped[str] = mapped_column(String(10))
+    format: Mapped[str] = mapped_column(String(20))
     path: Mapped[str] = mapped_column(String(400))
     created_by: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)

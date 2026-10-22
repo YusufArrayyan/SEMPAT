@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import secrets
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -1018,27 +1019,32 @@ REPORT_MEDIA = {"pdf": ("application/pdf", "pdf"), "csv_wilayah": ("text/csv", "
 
 @router.post("/runs/{run_id}/reports", status_code=201)
 def make_report(run_id: str, body: ReportIn, user: User = Depends(require_role("peneliti")), db: Session = Depends(get_db)):
-    import json
-
     r = _run(db, run_id)
     _require_done(r)
     rep = Report(run_id=r.id, format=body.format, path="", created_by=user.id)
     db.add(rep)
     db.flush()
-    ext = REPORT_MEDIA[body.format][1]
+    path = _write_report(db, r, rep)
+    audit(db, user, "ekspor", f"run:{r.id}", {"format": body.format, "report": rep.id})
+    db.commit()
+    return {"id": rep.id, "format": rep.format, "url": f"/api/reports/{rep.id}", "size": path.stat().st_size}
+
+
+def _write_report(db: Session, r: Run, rep: Report) -> Path:
+    import json
+
+    ext = REPORT_MEDIA[rep.format][1]
     path = DATA_DIR / "reports" / f"{rep.id}.{ext}"
-    if body.format == "pdf":
+    if rep.format == "pdf":
         path.write_bytes(reports.export_pdf(db, r))
-    elif body.format == "csv_wilayah":
+    elif rep.format == "csv_wilayah":
         path.write_text(reports.export_csv_areas(db, r), encoding="utf-8-sig")
-    elif body.format == "csv_sel":
+    elif rep.format == "csv_sel":
         path.write_text(reports.export_csv_cells(db, r), encoding="utf-8-sig")
     else:
         path.write_text(json.dumps(reports.cells_geojson(db, r)), encoding="utf-8")
     rep.path = str(path)
-    audit(db, user, "ekspor", f"run:{r.id}", {"format": body.format, "report": rep.id})
-    db.commit()
-    return {"id": rep.id, "format": rep.format, "url": f"/api/reports/{rep.id}", "size": path.stat().st_size}
+    return path
 
 
 @router.get("/reports/{rep_id}")
@@ -1047,6 +1053,10 @@ def download_report(rep_id: str, user: User = Depends(current_user), db: Session
     if not rep:
         raise ApiError(404, "laporan_tidak_ada", "Laporan tidak ditemukan.", "Buat ulang laporan dari halaman hasil.")
     run = db.get(Run, rep.run_id)
+    if not rep.path or not Path(rep.path).exists():
+        # Disk instans gratis tidak permanen: berkas hilang saat server dimulai ulang, jadi buat ulang dari hasil run.
+        _write_report(db, run, rep)
+        db.commit()
     media, ext = REPORT_MEDIA[rep.format]
     fname = f"sempat_{rep.format}_{run.id[:8]}.{ext}"
     return FileResponse(rep.path, media_type=media, filename=fname)

@@ -67,6 +67,8 @@ def init_db() -> None:
             )
             c.execute(text("DROP TRIGGER IF EXISTS audit_append_only ON audit_log;"))
             c.execute(text("CREATE TRIGGER audit_append_only BEFORE UPDATE OR DELETE ON audit_log FOR EACH ROW EXECUTE FUNCTION audit_append_only();"))
+            # Tabel lama dibuat dengan VARCHAR(10); "csv_wilayah" butuh 11 karakter.
+            c.execute(text("ALTER TABLE reports ALTER COLUMN format TYPE VARCHAR(20);"))
 
 
 def recover_interrupted_runs() -> None:

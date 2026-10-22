@@ -84,6 +84,15 @@ def test_alur_utama(client):
     pdf = client.post(f"/api/runs/{rid}/reports", json={"format": "pdf"}).json()
     body = client.get(pdf["url"]).content
     assert body[:4] == b"%PDF"
+    # Berkas hilang (disk instans dimulai ulang): unduhan membuat ulang laporan.
+    from app.config import DATA_DIR
+
+    (DATA_DIR / "reports" / f"{pdf['id']}.pdf").unlink()
+    assert client.get(pdf["url"]).content[:4] == b"%PDF"
+    for fmt in ("csv_wilayah", "csv_sel", "geojson"):
+        rep = client.post(f"/api/runs/{rid}/reports", json={"format": fmt})
+        assert rep.status_code == 201, fmt
+        assert client.get(rep.json()["url"]).status_code == 200
 
     share = client.post(f"/api/runs/{rid}/share").json()
     client.post("/api/auth/logout")
