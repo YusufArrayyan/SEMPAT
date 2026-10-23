@@ -28,9 +28,11 @@ export default function Shell() {
   ]
 
   async function logout() {
-    await api.post('/auth/logout')
-    qc.clear()
+    await api.post('/auth/logout').catch(() => {})
+    // Kosongkan pengguna dulu; bila tidak, halaman masuk mengembalikan ke dasbor yang lalu gagal 401.
+    qc.setQueryData(['me'], null)
     nav('/masuk', { replace: true })
+    qc.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' })
   }
 
   return (

@@ -5,7 +5,7 @@ import '@fontsource/ibm-plex-mono/400.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './styles.css'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode, lazy, Suspense, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
@@ -28,7 +28,13 @@ const Admin = lazy(() => import('./pages/Admin'))
 const PublicView = lazy(() => import('./pages/PublicView'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
-const qc = new QueryClient({
+const qc: QueryClient = new QueryClient({
+  // Sesi habis atau sudah keluar: kosongkan pengguna agar RequireAuth mengarahkan ke halaman masuk.
+  queryCache: new QueryCache({
+    onError: (e, query) => {
+      if (e instanceof ApiError && e.status === 401 && query.queryKey[0] !== 'me') qc.setQueryData(['me'], null)
+    },
+  }),
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
