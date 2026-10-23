@@ -3,7 +3,7 @@
   "rate": "+4%",
   "lines": [
     { "id": "judul", "caption": "", "say": "Ini Sempat, aplikasi web untuk menguji apakah warga Kota Bengkulu sempat mencapai tempat evakuasi sementara sebelum gelombang tsunami tiba." },
-    { "id": "masuk", "caption": "Masuk dengan akun demo berperan Analis.", "say": "Kita masuk dengan akun demo berperan Analis." },
+    { "id": "masuk", "caption": "Halaman masuk menyediakan tombol akun demo: sekali klik, tanpa kata sandi.", "say": "Di halaman masuk tersedia tombol akun demo, Analis dan Peneliti. Cukup satu klik, tanpa mengetik kata sandi. Kita masuk sebagai Analis." },
     { "id": "dasbor", "caption": "Dasbor: dataset terbit, hasil terakhir, peringatan kualitas data, dan panduan alur pertama.", "say": "Dasbor menampilkan dataset yang sudah terbit, hasil perhitungan terakhir, dan peringatan kualitas data." },
     { "id": "data", "caption": "Data TES, jalan, wilayah, penduduk, dan zona genangan diimpor lalu divalidasi otomatis.", "say": "Di menu Data, berkas tempat evakuasi, jaringan jalan, batas wilayah, penduduk, dan zona genangan diimpor, lalu diperiksa otomatis." },
     { "id": "validasi", "caption": "Laporan validasi menolak TES yang salah koordinat dan memberi tanda pada data yang belum lengkap.", "say": "Laporan validasi menolak tempat evakuasi yang koordinatnya salah, dan menandai data yang belum lengkap." },
@@ -23,6 +23,6 @@
     { "id": "selisih", "caption": "Hasilnya terukur: kenaikan IK dan jumlah penduduk yang berpindah dari Terlambat ke Sempat.", "say": "Hasilnya terukur. Indeks kecukupan naik, dan ribuan penduduk berpindah dari terlambat menjadi sempat." },
     { "id": "laporan", "caption": "Ekspor laporan PDF, CSV, dan GeoJSON; setiap angka terikat pada versi data dan parameter.", "say": "Hasil dapat diekspor sebagai laporan PDF, CSV, atau GeoJSON. Setiap angka tercatat bersama versi data dan parameternya." },
     { "id": "publik", "caption": "Tautan publik baca-saja dapat dibagikan kepada relawan dan warga tanpa akun.", "say": "Tautan publik baca saja juga bisa dibagikan kepada relawan dan warga." },
-    { "id": "penutup", "caption": "", "say": "Sempat adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami. Dari setiap sel permukiman, apakah warga sempat?" }
+    { "id": "penutup", "caption": "", "say": "Silakan coba sendiri di sempat titik onrender titik com, dengan tombol akun demo di halaman masuk. Sempat adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami." }
   ]
 }

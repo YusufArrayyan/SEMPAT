@@ -176,12 +176,19 @@ await done()
 
 // --- 1. Masuk ---------------------------------------------------------------------------------
 await page.goto(`${BASE}/masuk`)
-await page.getByLabel('Surel').waitFor()
+const demoAnalis = page.getByRole('button', { name: /Masuk sebagai Demo Analis/ })
+const demoPeneliti = page.getByRole('button', { name: /Masuk sebagai Demo Peneliti/ })
+await demoAnalis.waitFor()
 done = await say('masuk')
-await typeIn(page.getByLabel('Surel'), 'demo.analis@sempat.demo')
-await typeIn(page.getByLabel('Kata sandi'), 'DemoAnalis2026')
+// Sorot panel akun demo: Peneliti dulu, lalu Analis yang diklik.
+await wait(1200)
+const bp = await demoPeneliti.boundingBox()
+await glide(bp.x + bp.width * 0.7, bp.y + bp.height / 2)
+await wait(1800)
+const ba = await demoAnalis.boundingBox()
+await glide(ba.x + ba.width * 0.7, ba.y + ba.height / 2)
 await done()
-await clickOn(page.getByRole('button', { name: 'Masuk' }))
+await clickOn(demoAnalis)
 await page.getByRole('heading', { name: 'Dasbor' }).waitFor()
 await wait(500)
 done = await say('dasbor')
@@ -310,7 +317,8 @@ await showCard(`<div style="text-align:center;max-width:1050px">
   <img src="${LOGO}" style="width:130px;height:130px">
   <div style="font-size:42px;font-weight:300;margin-top:26px">Dari setiap sel permukiman, apakah warga sempat?</div>
   <div style="font-size:20px;font-weight:300;color:#c6c6c6;margin-top:18px">Hasil adalah uji kecukupan pada skenario terpilih, bukan prediksi tsunami.</div>
-  <div style="font-size:19px;color:#f5a51b;margin-top:30px">sempat.onrender.com</div></div>`)
+  <div style="font-size:19px;color:#f5a51b;margin-top:30px">sempat.onrender.com</div>
+  <div style="font-size:17px;font-weight:300;color:#a8a8a8;margin-top:8px">Masuk sekali klik dengan tombol akun demo Analis atau Peneliti</div></div>`)
 await setCap('')
 done = await say('penutup')
 await done()
