@@ -122,9 +122,42 @@ def login(body: LoginIn, request: Request, response: Response, db: Session = Dep
     user = db.scalar(select(User).where(func.lower(User.email) == body.email.strip().lower()))
     if not user or not user.active or not verify_password(body.password, user.password_hash):
         raise ApiError(401, "kredensial_salah", "Surel atau kata sandi tidak cocok.", "Periksa ejaan surel dan huruf besar-kecil kata sandi.")
+    return _start_session(db, user, response)
+
+
+def _start_session(db: Session, user: User, response: Response) -> dict:
     tok = create_session(db, user)
     response.set_cookie(COOKIE_NAME, tok.token, httponly=True, samesite="lax", secure=COOKIE_SECURE, max_age=int(SESSION_HOURS * 3600), path="/")
     return {"user": user_out(user)}
+
+
+def _demo_users(db: Session) -> list[User]:
+    from .bootstrap import DEMO_USERS, demo_enabled
+
+    if not demo_enabled():
+        return []
+    emails = [d[0] for d in DEMO_USERS]
+    users = {u.email: u for u in db.scalars(select(User).where(User.email.in_(emails), User.active.is_(True)))}
+    return [users[e] for e in emails if e in users]
+
+
+@router.get("/auth/demo")
+def demo_accounts(db: Session = Depends(get_db)):
+    """Akun demo untuk juri/pembaca esai; kosong bila SEMPAT_DEMO_ACCOUNTS=0."""
+    return {"items": [{"role": u.role, "name": u.name, "email": u.email} for u in _demo_users(db)]}
+
+
+class DemoLoginIn(BaseModel):
+    role: Literal["analis", "peneliti"]
+
+
+@router.post("/auth/demo")
+def demo_login(body: DemoLoginIn, request: Request, response: Response, db: Session = Depends(get_db)):
+    login_limiter.check(request.client.host if request.client else "?")
+    user = next((u for u in _demo_users(db) if u.role == body.role), None)
+    if not user:
+        raise ApiError(404, "demo_tidak_aktif", "Akun demo tidak tersedia.", "Masuk dengan akun yang dibuat Admin.")
+    return _start_session(db, user, response)
 
 
 @router.post("/auth/logout")

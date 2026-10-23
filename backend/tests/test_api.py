@@ -151,3 +151,13 @@ def test_akun_demo(client):
     r = client.post("/api/auth/login", json={"email": "demo.peneliti@sempat.demo", "password": "DemoPeneliti2026"})
     assert r.status_code == 200 and r.json()["user"]["role"] == "peneliti"
     assert client.get("/api/users").status_code == 403
+
+
+def test_masuk_demo_sekali_klik(client):
+    client.post("/api/auth/logout")
+    items = client.get("/api/auth/demo").json()["items"]
+    assert [i["role"] for i in items] == ["analis", "peneliti"]
+    r = client.post("/api/auth/demo", json={"role": "peneliti"})
+    assert r.status_code == 200 and r.json()["user"]["email"] == "demo.peneliti@sempat.demo"
+    assert client.get("/api/me").json()["user"]["role"] == "peneliti"
+    assert client.post("/api/auth/demo", json={"role": "admin"}).status_code == 422

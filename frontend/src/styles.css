@@ -1296,6 +1296,14 @@ table.dt tfoot td {
   max-width: 560px;
   width: 100%;
 }
+.btn-demo {
+  white-space: normal;
+}
+.btn-demo .caption {
+  display: block;
+  margin-top: 2px;
+  opacity: 0.8;
+}
 @media (max-width: 880px) {
   .login {
     grid-template-columns: minmax(0, 1fr);

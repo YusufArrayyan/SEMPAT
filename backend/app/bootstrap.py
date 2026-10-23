@@ -41,6 +41,11 @@ DEMO_USERS = [
     ("demo.peneliti@sempat.demo", "Demo Peneliti", "peneliti", "SEMPAT_DEMO_PENELITI_PASSWORD", "DemoPeneliti2026"),
 ]
 
+
+def demo_enabled() -> bool:
+    return os.getenv("SEMPAT_DEMO_ACCOUNTS", "1") == "1"
+
+
 SAMPLE_FILES = [
     ("wilayah", "wilayah.geojson"),
     ("penduduk", "penduduk.csv"),
@@ -98,7 +103,7 @@ def seed(with_sample: bool = True) -> None:
                     log.warning("%s kosong; kata sandi acak untuk %s: %s (ganti setelah masuk)", env, email, pw)
             db.commit()
             log.info("akun awal dibuat")
-        if os.getenv("SEMPAT_DEMO_ACCOUNTS", "1") == "1":
+        if demo_enabled():
             for email, name, role, env, default in DEMO_USERS:
                 if not db.scalar(select(User).where(User.email == email)):
                     db.add(User(email=email, name=name, role=role, password_hash=hash_password(os.getenv(env) or default)))

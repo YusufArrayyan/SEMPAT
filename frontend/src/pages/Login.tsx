@@ -1,10 +1,18 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { Logo } from '../components/Shell'
 import { Icon, Notice, useDocumentTitle } from '../components/ui'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../lib/auth'
+
+type DemoRole = 'analis' | 'peneliti'
+type DemoAccount = { role: DemoRole; name: string; email: string }
+
+const DEMO_ROLE_HINT: Record<DemoRole, string> = {
+  analis: 'Kelola data dan skenario, jalankan hitungan, bagikan tautan publik',
+  peneliti: 'Jalankan skenario, bandingkan hasil, dan ekspor laporan',
+}
 
 export default function Login() {
   useDocumentTitle('Masuk')
@@ -16,9 +24,22 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
+  const [demoBusy, setDemoBusy] = useState<DemoRole | null>(null)
   const next = params.get('ke') || '/'
+  const demo = useQuery({ queryKey: ['demo-accounts'], queryFn: () => api.get<{ items: DemoAccount[] }>('/auth/demo'), staleTime: Infinity, retry: 1 })
 
   if (user) return <Navigate to={next} replace />
+
+  async function enter(call: () => Promise<unknown>) {
+    setError(null)
+    try {
+      await call()
+      await qc.invalidateQueries({ queryKey: ['me'] })
+      nav(next.startsWith('/') ? next : '/', { replace: true })
+    } catch (err) {
+      setError(err instanceof ApiError ? err : new ApiError(0, 'galat', 'Gagal masuk.', 'Coba lagi.'))
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -28,17 +49,17 @@ export default function Login() {
       return
     }
     setBusy(true)
-    setError(null)
-    try {
-      await api.post('/auth/login', { email, password })
-      await qc.invalidateQueries({ queryKey: ['me'] })
-      nav(next.startsWith('/') ? next : '/', { replace: true })
-    } catch (err) {
-      setError(err instanceof ApiError ? err : new ApiError(0, 'galat', 'Gagal masuk.', 'Coba lagi.'))
-    } finally {
-      setBusy(false)
-    }
+    await enter(() => api.post('/auth/login', { email, password }))
+    setBusy(false)
   }
+
+  async function demoLogin(role: DemoRole) {
+    setDemoBusy(role)
+    await enter(() => api.post('/auth/demo', { role }))
+    setDemoBusy(null)
+  }
+
+  const demoItems = demo.data?.items ?? []
 
   return (
     <div className="login">
@@ -71,6 +92,34 @@ export default function Login() {
         <p className="muted" style={{ marginBottom: 32 }}>
           Gunakan akun yang dibuat Admin. Tamu dengan tautan publik tidak perlu masuk.
         </p>
+        {demoItems.length > 0 && (
+          <div className="tile-flat stack stack-16" style={{ marginBottom: 32 }} aria-labelledby="demo-title">
+            <div>
+              <h3 id="demo-title" className="heading-sm" style={{ marginBottom: 4 }}>
+                Coba dengan akun demo
+              </h3>
+              <p className="caption muted">Langsung masuk tanpa kata sandi. Data yang tampil adalah data contoh sintetis.</p>
+            </div>
+            {demoItems.map((d) => (
+              <button
+                key={d.role}
+                type="button"
+                className="btn btn-tertiary btn-demo"
+                style={{ width: '100%' }}
+                disabled={demoBusy !== null || busy}
+                onClick={() => demoLogin(d.role)}
+              >
+                <span>
+                  {demoBusy === d.role ? 'Memeriksa…' : `Masuk sebagai ${d.name}`}
+                  <span className="caption">
+                    {DEMO_ROLE_HINT[d.role]}
+                  </span>
+                </span>
+                <Icon name="arrow" />
+              </button>
+            ))}
+          </div>
+        )}
         <form onSubmit={submit} className="stack stack-24" noValidate>
           {error && (
             <Notice kind="error" title={error.message}>
